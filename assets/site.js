@@ -1,4 +1,4 @@
-/* T&H V1 — site institucional. WebGL nativo; sem dependências externas. */
+/* T&H V1.5 — máscara imersiva e parallax; WebGL nativo sem dependências externas. */
 (function(){
   'use strict';
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -12,6 +12,46 @@
   const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target)}}),{threshold:.11});document.querySelectorAll('.reveal').forEach(e=>observer.observe(e));
   const navi=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){document.querySelectorAll('.nav-link').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+entry.target.id))}}),{rootMargin:'-20% 0px -65% 0px'});['sobre','atuacao','jogos','contato'].forEach(id=>navi.observe(document.getElementById(id)));
   const form=document.getElementById('briefingForm');form.addEventListener('submit',async ev=>{ev.preventDefault();if(!form.reportValidity())return;const v=id=>document.getElementById(id).value.trim();const message=`BRIEFING — T&H TORII & HUTUKARA\n\nNome: ${v('clientName')}\nE-mail: ${v('clientEmail')}\nEmpresa/projeto: ${v('clientCompany') || 'Não informado'}\nTipo de experiência: ${v('clientType') || 'A definir'}\n\nIdeia:\n${v('clientMessage')}`;const status=document.getElementById('formStatus');try{await navigator.clipboard.writeText(message);status.textContent='Briefing copiado! Você pode colá-lo onde preferir.'}catch(err){const ta=document.createElement('textarea');ta.value=message;ta.style.position='fixed';ta.style.top='-9999px';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();status.textContent=ok?'Briefing copiado!':'Seu navegador bloqueou a cópia automática. Selecione e copie o texto dos campos.'}});
+
+  // Leve profundidade nas camadas, mantendo a leitura e a rolagem nativas.
+  if(!reduce){
+    const hero=document.getElementById('inicio');
+    const sections=[...document.querySelectorAll('.intro,.capabilities,.domains,.process,.games,.contact')];
+    const layers=sections.map(section=>({
+      section,
+      items:[...section.querySelectorAll('.eyebrow,.display,.intro-lead,.cap-head>p,.service-card,.domain,.process-grid,.games-intro,.games-archive,.contact-layout')]
+    }));
+    layers.forEach(group=>group.items.forEach((item,index)=>{
+      item.classList.add('depth-layer');
+      item.dataset.depthRate=String(item.classList.contains('display')?1.0:item.classList.contains('eyebrow')?.4:item.classList.contains('service-card')||item.classList.contains('domain')?.46:.62);
+    }));
+    let tick=false;
+    const applyDepth=()=>{
+      tick=false;
+      const vh=Math.max(1,innerHeight);
+      const phase=Math.min(1,Math.max(0,scrollY/Math.max(1,hero.offsetHeight)));
+      hero.style.setProperty('--stars-drift',(-phase*65).toFixed(2)+'px');
+      hero.style.setProperty('--rings-drift',(phase*54).toFixed(2)+'px');
+      hero.style.setProperty('--glow-drift',(phase*90).toFixed(2)+'px');
+      hero.style.setProperty('--hero-drift',(-phase*86).toFixed(2)+'px');
+      hero.style.setProperty('--hero-scale',(1+phase*.07).toFixed(3));
+      for(const group of layers){
+        const rect=group.section.getBoundingClientRect();
+        if(rect.bottom < -vh*.5||rect.top>vh*1.5)continue;
+        const center=rect.top+rect.height/2;
+        const relative=Math.max(-1.65,Math.min(1.65,(center-vh/2)/vh));
+        group.section.style.setProperty('--depth-bg',(-relative*66).toFixed(2)+'px');
+        group.items.forEach(item=>{
+          const rate=Number(item.dataset.depthRate)||.5;
+          item.style.setProperty('--depth-y',(-relative*32*rate).toFixed(2)+'px');
+        });
+      }
+    };
+    const scheduleDepth=()=>{if(tick)return;tick=true;requestAnimationFrame(applyDepth)};
+    window.addEventListener('scroll',scheduleDepth,{passive:true});
+    window.addEventListener('resize',scheduleDepth,{passive:true});
+    applyDepth();
+  }
   // WebGL viewer with direct glTF Binary (.glb) parser, no remote JS or CSS dependencies.
   const canvas=document.getElementById('modelCanvas'),host=document.getElementById('heroCore');
   let gl;try{gl=canvas.getContext('webgl2',{alpha:true,antialias:true,premultipliedAlpha:true,powerPreference:'high-performance'})}catch(e){};if(!gl){return}
@@ -76,13 +116,18 @@
   host.addEventListener('pointerup',()=>{drag=false});host.addEventListener('pointercancel',()=>{drag=false});
   const resizer=new ResizeObserver(()=>resize());resizer.observe(host);function resize(){const rect=host.getBoundingClientRect(),ratio=Math.min(2,window.devicePixelRatio||1),w=Math.max(1,Math.round(rect.width*ratio)),h=Math.max(1,Math.round(rect.height*ratio));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h)}}
   let last=0,rotationTime=0;function draw(ms){if(!ready)return;const delta=Math.min(.07,(ms-last)/1000||0);last=ms;rotationTime+=delta;resize();if(!reduce&&!drag)longitudeTarget+=delta*.095;longitude+=(longitudeTarget-longitude)*Math.min(1,delta*5);pitch+=(pitchTarget-pitch)*Math.min(1,delta*5);
-    const size=Math.max(...bounds.max.map((v,i)=>v-bounds.min[i]));const mid=bounds.min.map((v,i)=>(v+bounds.max[i])*.5),s=2.0/size;
+    const size=Math.max(...bounds.max.map((v,i)=>v-bounds.min[i]));const mid=bounds.min.map((v,i)=>(v+bounds.max[i])*.5);const aspect=canvas.width/Math.max(1,canvas.height);const mobileFit=Math.min(1,Math.max(.68,aspect/.90)),s=3.12*mobileFit/size;
     const model=multiply(rotateY(longitude),multiply(rotateX(-pitch),multiply(scale(s),translate(-mid[0],-mid[1],-mid[2]))));
-    const ratio=canvas.width/canvas.height,projection=perspective(40*Math.PI/180,ratio,.1,30),view=translate(0,0,-4.2),vp=multiply(projection,view);
-    gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);gl.useProgram(program);gl.uniformMatrix4fv(modelLoc,false,model);gl.uniformMatrix4fv(vpLoc,false,vp);gl.uniform3f(eyeLoc,0,0,4.2);gl.uniform1f(timeLoc,rotationTime);
+    const ratio=canvas.width/canvas.height,projection=perspective(40*Math.PI/180,ratio,.1,30),view=translate(0,0,-3.52),vp=multiply(projection,view);
+    gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);gl.useProgram(program);gl.uniformMatrix4fv(modelLoc,false,model);gl.uniformMatrix4fv(vpLoc,false,vp);gl.uniform3f(eyeLoc,0,0,3.52);gl.uniform1f(timeLoc,rotationTime);
     meshes.forEach(mesh=>{gl.bindVertexArray(mesh.vao);gl.drawElements(gl.TRIANGLES,mesh.count,mesh.type,mesh.offset)});gl.bindVertexArray(null);
     if(!reduce)raf=requestAnimationFrame(draw)
   }
-  async function load(){try{const urls=Array.from({length:13},(_,i)=>'assets/mask/part-'+String(i).padStart(2,'0')+'.b64');const chunks=await Promise.all(urls.map(async u=>{const r=await fetch(u);if(!r.ok)throw Error('Falha ao carregar modelo 3D: '+u);return r.text()}));const binary=atob(chunks.join(''));const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));parseGLB(bytes.buffer);ready=true;host.classList.add('is-ready');resize();requestAnimationFrame(draw)}catch(e){console.warn('T&H: modo 3D indisponível; exibindo símbolo de segurança.',e)}}
+  async function load(){try{
+    let data=null;
+    try{const response=await fetch(window.T_H_MODEL_URI||'assets/mask.glb');if(response.ok)data=await response.arrayBuffer()}catch(e){}
+    if(!data){const urls=Array.from({length:13},(_,i)=>'assets/mask/part-'+String(i).padStart(2,'0')+'.b64');const chunks=await Promise.all(urls.map(async u=>{const r=await fetch(u);if(!r.ok)throw Error('Falha ao carregar modelo 3D: '+u);return r.text()}));const binary=atob(chunks.join(''));data=Uint8Array.from(binary,c=>c.charCodeAt(0)).buffer}
+    parseGLB(data);ready=true;host.classList.add('is-ready');resize();requestAnimationFrame(draw)
+  }catch(e){console.warn('T&H: modo 3D indisponível; exibindo símbolo de segurança.',e)}}
   load();document.addEventListener('visibilitychange',()=>{if(ready&&!document.hidden&&!reduce){cancelAnimationFrame(raf);last=performance.now();raf=requestAnimationFrame(draw)}});
 })();

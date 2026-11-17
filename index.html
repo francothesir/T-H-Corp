@@ -61,6 +61,46 @@
       .hero-core{top:16.5%;height:61%;width:105vw}
       .hero-title{bottom:88px}
     }
+
+    /* T&H v1.5 — WebGL em primeiro plano; visual cinematográfico e scroll profundo. */
+    .hero{min-height:760px;background:radial-gradient(ellipse 46% 52% at 50% 48%,#143c91 0%,#0b1e51 43%,transparent 90%),radial-gradient(ellipse 66% 58% at 50% 62%,#0a153a,transparent 80%),linear-gradient(114deg,#040814 0%,#081633 49%,#030713 100%)}
+    .hero-core{top:48%;left:50%;height:90%;width:min(1120px,94vw);transform:translate(-50%,calc(-50% + var(--hero-drift,0px))) scale(var(--hero-scale,1));transition:opacity .18s linear;z-index:3}
+    .hero-core .grab-hint{bottom:10%;right:7%;font-size:10px;color:rgba(202,221,255,.72)}
+    .hero-core .fallback-mark{width:66%;height:66%;top:17%;left:17%;filter:drop-shadow(0 24px 65px rgba(43,113,255,.52))}
+    .hero-glow{top:12%;width:min(77vw,1050px);height:min(77vw,1050px);opacity:.84;translate:0 var(--glow-drift,0px)}
+    .stars{translate:0 var(--stars-drift,0px)}
+    .orbital{top:49%;translate:0 var(--rings-drift,0px);border-color:rgba(169,201,255,.17)}
+    .orbital.one{width:min(75vw,910px);height:min(75vw,910px)}
+    .orbital.two{width:min(91vw,1260px);height:min(91vw,1260px)}
+    .orbital.three{width:min(95vw,1390px);height:min(95vw,1390px)}
+    .hero-bottom{z-index:7}
+    .hero-bottom .scroll-note:before{animation:scroll-pulse 2.7s ease-in-out infinite}
+    @keyframes scroll-pulse{0%,100%{opacity:.35;transform:scaleY(.65)}50%{opacity:1;transform:scaleY(1)}}
+    .depth-layer{translate:0 var(--depth-y,0px)}
+    .intro,.capabilities,.domains,.process,.games,.contact{position:relative;isolation:isolate;overflow:hidden}
+    .intro::before,.capabilities::before,.domains::before,.process::before,.games::before,.contact::before{content:'';position:absolute;inset:-18% -10%;z-index:-1;pointer-events:none;transform:translate3d(0,var(--depth-bg,0px),0);will-change:transform}
+    .intro::before,.domains::before{background:radial-gradient(ellipse 42% 35% at 82% 38%,rgba(16,93,215,.075),transparent 80%)}
+    .capabilities::before,.contact::before{background:radial-gradient(ellipse 44% 35% at 72% 33%,rgba(20,104,255,.20),transparent 85%)}
+    .process::before{background:radial-gradient(ellipse 37% 38% at 20% 30%,rgba(255,255,255,.11),transparent 85%)}
+    .games::before{background:radial-gradient(ellipse 48% 44% at 75% 50%,rgba(42,108,248,.23),transparent 85%)}
+    @media (max-width:760px){
+      .hero{min-height:660px;height:100svh}
+      .hero-core{top:48%;height:76%;width:122vw}
+      .hero-core .grab-hint{display:none}
+      .hero-glow{top:25%;width:95vw;height:95vw}
+      .orbital.one{width:530px;height:530px}
+      .orbital.two{width:740px;height:740px}
+      .orbital.three{width:900px;height:900px}
+      .hero-bottom .scroll-note{display:flex}
+    }
+    @media(max-width:430px){
+      .hero-core{top:47%;height:77%;width:125vw}
+      .hero-bottom .scroll-note{display:none}
+    }
+    @media(max-width:760px) and (max-height:760px){
+      .hero-core{top:48%;height:80%;width:120vw}
+    }
+    @media(prefers-reduced-motion:reduce){.depth-layer{translate:none!important}.intro::before,.capabilities::before,.domains::before,.process::before,.games::before,.contact::before{transform:none!important}.hero-core{transform:translate(-50%,-50%)!important}.stars,.orbital,.hero-glow{translate:none!important}}
   </style>
 </head>
 <body>
@@ -75,11 +115,7 @@
   <main>
     <section class="hero" id="inicio" aria-label="Apresentação T&H">
       <div class="stars"></div><div class="hero-glow"></div><div class="orbital one"></div><div class="orbital two"></div><div class="orbital three"></div>
-      <div class="hero-top"><div class="eyebrow">T&amp;H — TORII &amp; HUTUKARA</div><p>ESTÚDIO DE TECNOLOGIA CRIATIVA</p></div>
-      <div class="hero-corner left"><small>01 / VISÃO</small><span class="line"></span><strong>DA PRIMEIRA IDEIA<br>AO IMPOSSÍVEL.</strong><div>Conceito, código e imaginação em um único universo.</div></div>
-      <div class="hero-corner right"><small>03 / DIMENSÕES</small><span class="line"></span><strong>CRIATIVIDADE.<br>TECNOLOGIA.<br>INTERAÇÃO.</strong></div>
       <div class="hero-core" id="heroCore" role="img" aria-label="Modelo 3D interativo da máscara T&H. Arraste para girar."><canvas class="hero-canvas" id="modelCanvas" aria-hidden="true"></canvas><img class="fallback-mark" src="assets/th-mask-mark.png" alt=""/><div class="grab-hint"><span>↔</span> ARRASTE PARA EXPLORAR</div></div>
-      <div class="hero-title"><h1>IDEIAS QUE<br><span>VIRAM <i>MUNDOS.</i></span></h1><p class="subtitle">Não criamos apenas plataformas. Criamos experiências que colocam pessoas dentro das ideias.</p></div>
       <div class="hero-bottom"><div class="scroll-note">ROLE PARA DESCOBRIR</div><a class="pill" href="#sobre">ENTRE NO UNIVERSO <span aria-hidden="true">↓</span></a></div>
     </section>
     <div class="ticker" aria-label="Jogos, arte, tecnologia, experiências, interatividade"><div class="ticker-inner"><span>JOGOS <b>✳</b> EXPERIÊNCIAS <b>✳</b> TECNOLOGIA CRIATIVA <b>✳</b> MUNDOS DIGITAIS <b>✳</b> CULTURA <b>✳</b> INTERAÇÃO <b>✳</b></span><span>JOGOS <b>✳</b> EXPERIÊNCIAS <b>✳</b> TECNOLOGIA CRIATIVA <b>✳</b> MUNDOS DIGITAIS <b>✳</b> CULTURA <b>✳</b> INTERAÇÃO <b>✳</b></span></div></div>
